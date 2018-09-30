@@ -26,3 +26,10 @@ Now that you’ve connected your application to an external database, it’s tim
 - **Progressive Web App** score should be at 90 or better.
 - **Performance** score should be at **90** or better.
 - **Accessibility** score should be at 90 or better.
+
+### Steps to complete
+1. Fork and clone the [server repository](https://github.com/udacity/mws-restaurant-stage-3). You’ll use this development server to develop your project code.
+2. Continue with your **Stage Two**, add a form to allow users to submit their own reviews.
+3. Add functionality to defer submission of the form until connection is re-established.
+4. Follow the recommendations provided by Lighthouse to achieve the required performance targets.
+5. Submit your project code for review.
