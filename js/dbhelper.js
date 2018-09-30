@@ -23,39 +23,6 @@ class DBHelper {
   /**
    * Fetch all restaurants.
    */
-  // static localFetchRestaurants(callback) {
-  //   let xhr = new XMLHttpRequest();
-  //   xhr.open('GET','http://localhost:8000/data/restaurants.json');
-  //   xhr.onload = () => {
-  //     if (xhr.status === 200) { // Got a success response from server!
-  //       const json = JSON.parse(xhr.responseText);
-  //       const restaurants = json.restaurants;
-  //       callback(null, restaurants);
-  //     } else { // Oops!. Got an error from server.
-  //       const error = (`Request failed. Returned status of ${xhr.status}`);
-  //       callback(error, null);
-  //     }
-  //   };
-  //   xhr.send();
-  // }
-
-  // static fetchRestaurants(callback) {
-  //   fetch(DBHelper.DATABASE_URL)
-  //     .then(response => {
-  //       if (!response.ok) {
-  //         const error = (`Request failed. Returned status of ${response.statusText}`);
-  //         callback(error, null);
-  //       }
-  //       const restaurants = response.json();
-  //       return restaurants;
-  //     })
-  //     .then(restaurants => callback(null, restaurants))
-  //     .catch(error => {
-  //       console.log(error)
-  //       DBHelper.localFetchRestaurants(callback);
-  //     })
-  // }
-
   static fetchRestaurants(callback) {
     dbPromise.then(function(db) {
       const tx = db.transaction("restaurants");
@@ -89,37 +56,9 @@ class DBHelper {
   }
 
 
-  // static localFetchRestaurantById(id, callback) {
-  //   DBHelper.localFetchRestaurants((error, restaurants) => {
-  //     if (error) {
-  //       callback(error, null);
-  //     } else {
-  //       const restaurant = restaurants.find(r => r.id == id);
-  //       if (restaurant) { // Got the restaurant
-  //         callback(null, restaurant);
-  //       } else { // Restaurant does not exist in the database
-  //         callback('Restaurant does not exist', null);
-  //       }
-  //     }
-  //   });
-  // }
-
-  // static fetchRestaurantById(id, callback) {
-  //   DBHelper.fetchRestaurants((error, restaurants) => {
-  //     if (error) {
-  //       // callback(error, null);
-  //       DBHelper.localFetchRestaurantsById(id, callback);
-  //     } else {
-  //       const restaurant = restaurants.find(r => r.id == id);
-  //       if (restaurant) {
-  //         callback(null, restaurant);
-  //       } else {
-  //         callback('Restaurant does not exist', null);
-  //       }
-  //     }
-  //   });
-  // }
-
+  /**
+   * Fetch restaurants by Id.
+   */
   static fetchRestaurantById(id, callback) {
     dbPromise.then(function(db){
       const tx = db.transaction("restaurants");
