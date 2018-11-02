@@ -78,7 +78,7 @@ initMap = () => {
         scrollWheelZoom: false
       });
   L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
-    mapboxToken: 'pk.eyJ1IjoieHljaGVuZyIsImEiOiJjam1jd2gxZHYwazkwM3ducWZ4N2g3bmVsIn0.ydMovqGq9R5ls2nB0-5Tzg',
+    mapboxToken: 'pk.eyJ1IjoibmlzaGFwbW9yZSIsImEiOiJjamxkZWQwdTcwOW0xM2tybzl5c2Vtd2lvIn0.oDix6vt3Wj2RcZwTjJFvgQ',
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
       '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
@@ -149,13 +149,7 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
   restaurants.forEach(restaurant => {
     ul.append(createRestaurantHTML(restaurant));
   });
-
-  try {
-    addMarkersToMap();
-  }
-  catch (e) {
-    console.log(e);
-  }
+  addMarkersToMap();
 }
 
 /**
@@ -164,41 +158,63 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 createRestaurantHTML = (restaurant) => {
   const li = document.createElement('li');
 
-
-  const picture = document.createElement('picture');
-  picture.className = 'restaurant-img';
-  const source = document.createElement('source');
-  source.setAttribute('type', 'image/webp');
-  source.setAttribute('srcset', DBHelper.imageUrlForRestaurant(restaurant).replace('jpg', 'webp'));
-  picture.append(source);
-
   const image = document.createElement('img');
   image.className = 'restaurant-img';
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
-  image.alt = restaurant.name;
-  picture.append(image);
 
-  li.append(picture);
+  image.setAttribute('tabindex', '0');
+  image.alt =  `Image of ${restaurant.name}`
+  image.setAttribute('aria-label', `Restaurant ${restaurant.name} Image`);
+  li.append(image);
 
-  const name = document.createElement('h1');
+  const name = document.createElement('h2');
   name.innerHTML = restaurant.name;
   name.setAttribute('tabindex', '0');
+  name.setAttribute('aria-label', `Restaurant ${restaurant.name} Heading`);
   li.append(name);
 
   const neighborhood = document.createElement('p');
   neighborhood.innerHTML = restaurant.neighborhood;
   neighborhood.setAttribute('tabindex', '0');
+  neighborhood.setAttribute('aria-label', `Neighborhood ${restaurant.neighborhood}`);
   li.append(neighborhood);
 
   const address = document.createElement('p');
   address.innerHTML = restaurant.address;
   address.setAttribute('tabindex', '0');
+  address.setAttribute('aria-label', `Restaurant address ${restaurant.address}`);
   li.append(address);
 
   const more = document.createElement('a');
   more.innerHTML = 'View Details';
   more.href = DBHelper.urlForRestaurant(restaurant);
   li.append(more)
+
+  li.append(document.createElement('br'));
+
+  const favorite = document.createElement('button');
+  favorite.className = 'restaurant-favorite';
+  favorite.setAttribute('aria-label', 'favorite');
+  favorite.id = `fav-${restaurant.id}`;
+  favorite.onclick = toggleFavorite;
+
+  if (restaurant.is_favorite === true) {
+    favorite.innerHTML = 'Unmark';
+  } else {
+    favorite.innerHTML = 'Mark as Favorite';
+  }
+
+  li.append(favorite);
+
+  function toggleFavorite() {
+    if (favorite.innerHTML === 'Mark as Favorite') {
+      favorite.innerHTML = 'Unmark';
+      DBHelper.updateFavorite(restaurant.id, true);
+    } else {
+      favorite.innerHTML = 'Mark as Favorite';
+      DBHelper.updateFavorite(restaurant.id, false);
+    }
+  }
 
   return li
 }
@@ -228,4 +244,3 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     self.markers.push(marker);
   });
 } */
-

@@ -1,11 +1,13 @@
 let restaurant;
 var newMap;
 
+
 /**
  * Initialize map as soon as the page is loaded.
  */
 document.addEventListener('DOMContentLoaded', (event) => {
   initMap();
+
 });
 
 /**
@@ -16,27 +18,21 @@ initMap = () => {
     if (error) { // Got an error!
       console.error(error);
     } else {
-      try {
-        self.newMap = L.map('map', {
+      self.newMap = L.map('map', {
         center: [restaurant.latlng.lat, restaurant.latlng.lng],
         zoom: 16,
         scrollWheelZoom: false
-        });
-        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
-        mapboxToken: 'pk.eyJ1IjoieHljaGVuZyIsImEiOiJjam1jd2gxZHYwazkwM3ducWZ4N2g3bmVsIn0.ydMovqGq9R5ls2nB0-5Tzg',
+      });
+      L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
+        mapboxToken: 'pk.eyJ1IjoibmlzaGFwbW9yZSIsImEiOiJjamxkZWQwdTcwOW0xM2tybzl5c2Vtd2lvIn0.oDix6vt3Wj2RcZwTjJFvgQ',
         maxZoom: 18,
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
           '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
           'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
         id: 'mapbox.streets'
-        }).addTo(newMap);
-        fillBreadcrumb();
-        DBHelper.mapMarkerForRestaurant(self.restaurant, self.newMap);
-      }
-      catch (e)
-      {
-        console.log("map is offline");
-      }
+      }).addTo(newMap);
+      fillBreadcrumb();
+      DBHelper.mapMarkerForRestaurant(self.restaurant, self.newMap);
     }
   });
 }
@@ -77,7 +73,7 @@ fetchRestaurantFromURL = (callback) => {
         return;
       }
       fillRestaurantHTML();
-      callback(null, restaurant);
+      callback(null, restaurant)
     });
   }
 }
@@ -92,14 +88,9 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   const address = document.getElementById('restaurant-address');
   address.innerHTML = restaurant.address;
 
-  const picture = document.getElementById('restaurant-picture');
-  picture.className = 'restaurant-img';
-  picture.querySelector("source").srcset = DBHelper.imageUrlForRestaurant(restaurant).replace('jpg', 'webp');
-
   const image = document.getElementById('restaurant-img');
-  image.className = 'restaurant-img';
+  image.className = 'restaurant-img'
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
-  image.alt = restaurant.name;
 
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
@@ -109,7 +100,16 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
     fillRestaurantHoursHTML();
   }
   // fill reviews
-  fillReviewsHTML();
+  DBHelper.fetchReviewsFromEndPoint(restaurant.id, (error,reviews) => {
+    if (!reviews) {
+      console.error("reviews error restaurant_info.js" + error);
+      return ;
+    } else {
+      fillReviewsHTML(reviews);
+    }
+  });
+
+
 }
 
 /**
@@ -122,14 +122,12 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 
     const day = document.createElement('td');
     day.innerHTML = key;
-    day.setAttribute('aria-label', `${key} open`);
     row.appendChild(day);
 
     const time = document.createElement('td');
     time.innerHTML = operatingHours[key];
-    time.setAttribute('aria-label', operatingHours[key].replace(/\-/g, "to"));
     row.appendChild(time);
-    row.setAttribute('tabindex', 0);
+
     hours.appendChild(row);
   }
 }
@@ -137,23 +135,24 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 /**
  * Create all reviews HTML and add them to the webpage.
  */
-fillReviewsHTML = (reviews = self.restaurant.reviews) => {
+function fillReviewsHTML(reviews) {
   const container = document.getElementById('reviews-container');
-  const title = document.createElement('h3');
-  title.innerHTML = 'Reviews';
-  title.setAttribute('tabindex', 0);
-  container.appendChild(title);
 
   if (!reviews) {
     const noReviews = document.createElement('p');
     noReviews.innerHTML = 'No reviews yet!';
+    noReviews.setAttribute('tabindex', 0);
     container.appendChild(noReviews);
     return;
   }
   const ul = document.getElementById('reviews-list');
-  reviews.forEach(review => {
-    ul.appendChild(createReviewHTML(review));
-  });
+  if(Array.isArray(reviews)){
+    reviews.forEach(review => {
+      ul.appendChild(createReviewHTML(review));
+    });
+  }else{
+    ul.appendChild(createReviewHTML(reviews));
+  }
   container.appendChild(ul);
 }
 
@@ -162,24 +161,17 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
  */
 createReviewHTML = (review) => {
   const li = document.createElement('li');
-  const name = document.createElement('p');
-  name.innerHTML = review.name;
-  name.setAttribute('tabindex', 0);
-  li.appendChild(name);
 
-  const date = document.createElement('p');
-  date.innerHTML = review.date;
-  date.setAttribute('tabindex', 0);
-  li.appendChild(date);
+  const name = document.createElement('div');
+  name.innerHTML = review.name;
+  li.appendChild(name);
 
   const rating = document.createElement('p');
   rating.innerHTML = `Rating: ${review.rating}`;
-  rating.setAttribute('tabindex', 0);
   li.appendChild(rating);
 
   const comments = document.createElement('p');
   comments.innerHTML = review.comments;
-  comments.setAttribute('tabindex', 0);
   li.appendChild(comments);
 
   return li;
@@ -191,8 +183,7 @@ createReviewHTML = (review) => {
 fillBreadcrumb = (restaurant=self.restaurant) => {
   const breadcrumb = document.getElementById('breadcrumb');
   const li = document.createElement('li');
-  // li.innerHTML = restaurant.name;
-  // li.setAttribute('aria-hidden', 'true');
+  li.innerHTML = restaurant.name;
   breadcrumb.appendChild(li);
 }
 
@@ -210,4 +201,30 @@ getParameterByName = (name, url) => {
   if (!results[2])
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+function addReview(){
+
+  event.preventDefault();
+  //Get the form data
+  let user_name = document.getElementById("user_name").value;
+  let rating = document.querySelector("#rating option:checked").value;
+  let comments = document.getElementById("comments").value;
+  let restaurant_id = getParameterByName("id");
+  let review = [user_name, rating, comments, restaurant_id];
+  console.log("add review button clicked with form vals "+ user_name + " "+ rating + " "+comments + restaurant_id);
+
+  //Create review object which we will send to server
+  const reviewBody = {
+    name: review[0],
+    rating: parseInt(review[1]),
+    comments: review[2],
+    restaurant_id: parseInt(review[3])
+  }
+
+  DBHelper.submitReview(reviewBody);
+  //fillReviewsHTML(reviewBody);
+  document.getElementById("add_review_form").reset();
+  fillReviewsHTML(reviewBody);
+
 }

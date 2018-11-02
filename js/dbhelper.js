@@ -1,16 +1,30 @@
-
-let dbPromise = idb.open("restaurant-review", 1, function(upgradeDB) {
-upgradeDB.createObjectStore("restaurants", { keyPath: "id" });
-});
-
-
 /**
  * Common database helper functions.
  */
+
+const db_name = "restaurants";
+const restaurantObjectStoreName = "restaurantStore"
+const reviewsObjectStoreName = "reviewsStore"
+
+
+const dbPromise = idb.open(db_name, 2, function(upgradeDB) {
+  console.log('making a new object store');
+  switch (upgradeDB.oldVersion) {
+    case 0:
+      upgradeDB.createObjectStore(restaurantObjectStoreName, {keyPath: 'id'});
+    case 1:
+      {
+        const reviews = upgradeDB.createObjectStore(reviewsObjectStoreName, {keyPath: 'id'});
+        reviews.createIndex('restaurant_id', 'restaurant_id');
+      }
+  }
+});
+
+
+
 class DBHelper {
 
-
-  /**
+ /**
    * Database URL.
    * Change this to restaurants.json file location on your server.
    */
@@ -19,63 +33,92 @@ class DBHelper {
     return `http://localhost:${port}/restaurants`;
   }
 
+  static get DATABASE_URL_REVIEWS() {
+    const port = 1337;
+    return `http://localhost:${port}/reviews/?restaurant_id=`;
+  }
+
 
   /**
    * Fetch all restaurants.
    */
   static fetchRestaurants(callback) {
-    dbPromise.then(function(db) {
-      const tx = db.transaction("restaurants");
-      const restaurantStore = tx.objectStore("restaurants");
+    // get all restaurants from the IndexedDB
+    dbPromise.then(db => {
+      const tx = db.transaction(restaurantObjectStoreName);
+      const restaurantStore = tx.objectStore(restaurantObjectStoreName);
       return restaurantStore.getAll();
-    }).then(function(restaurants) {
-      if (restaurants.length !== 0) {
-        callback(null, restaurants);
+   }).then(function(restaurants) {
+     // check if the result is empty
+     if (restaurants.length !== 0) {
+       callback(null, restaurants);
+     } else {
+       // if the IndexedDB is empty, fetch the restaurants from API
+       // then add them to the IndexedDB
+       fetch(DBHelper.DATABASE_URL)
+         .then(response => response.json())
+         .then(restaurants => {
+           dbPromise.then(db => {
+             const tx = db.transaction(restaurantObjectStoreName, 'readwrite');
+             const restaurantStore = tx.objectStore(restaurantObjectStoreName);
+             for (let restaurant of restaurants) {
+               restaurantStore.put(restaurant);
+             }
+             return tx.complete;
+           }).then(function() {
+             console.log('Restaurants added to IndexedDB');
+           }).catch(function(error) {
+             console.error(error);
+           }).finally(function(error) {
+             callback(null, restaurants);
+           });
+       }).catch(error => callback(error, null));
+     }
+   });
+  }
+
+
+  static fetchReviewsFromEndPoint(id, callback) {
+    fetch(`${DBHelper.DATABASE_URL_REVIEWS}${id}`)
+    .then(response => response.json())
+    .then(reviews => {
+      callback(null, reviews);
+      dbPromise.then(db => {
+        if (!db) return;
+      const tx = db.transaction(reviewsObjectStoreName, 'readwrite');
+      const reviewStore = tx.objectStore(reviewsObjectStoreName);
+      if (Array.isArray(reviews)) {
+        for (let review of reviews) {
+          reviewStore.put(review);
+        }
       } else {
-          fetch(DBHelper.DATABASE_URL)
-          .then(response => response.json())
-          .then(restaurants => {
-            dbPromise.then(function(db){
-              const tx = db.transaction("restaurants", "readwrite");
-              const restaurantStore = tx.objectStore("restaurants");
-              for (let restaurant of restaurants) {
-                restaurantStore.put(restaurant);
-              }
-              return tx.complete;
-            }).then(function() {
-              console.log("Restaurants added to IndexedDB");
-            }).catch(function(error) {
-              console.error(error);
-            }).finally(function(error) {
-              callback(null, restaurants);
-            });
-          })
-          .catch(error => callback(error, null));
+        reviewStore.put(reviews);
       }
-    });
+     });
+    })
   }
 
 
   /**
-   * Fetch restaurants by Id.
+   * Fetch a restaurant by its ID.
    */
   static fetchRestaurantById(id, callback) {
-    dbPromise.then(function(db){
-      const tx = db.transaction("restaurants");
-      const restaurantStore = tx.objectStore("restaurants");
+    dbPromise.then(db => {
+      const tx = db.transaction(restaurantObjectStoreName);
+      const restaurantStore = tx.objectStore(restaurantObjectStoreName);
       return restaurantStore.get(parseInt(id))
-    }).then(function(restaurant) {
+    })
+    .then(restaurant => {
       if (restaurant) {
         callback(null, restaurant);
       } else {
-        fetch(DBHelper.DATABASE_URL + '/' + id)
+        fetch(`${DBHelper.DATABASE_URL}/${id}`)
           .then(response => response.json())
           .then(restaurants => callback(null, restaurants))
           .catch(error => callback(error, null));
       }
     });
   }
-
 
   /**
    * Fetch restaurants by a cuisine type with proper error handling.
@@ -170,6 +213,7 @@ class DBHelper {
    * Restaurant page URL.
    */
   static urlForRestaurant(restaurant) {
+
     return (`./restaurant.html?id=${restaurant.id}`);
   }
 
@@ -184,16 +228,82 @@ class DBHelper {
   /**
    * Map marker for a restaurant.
    */
-   static mapMarkerForRestaurant(restaurant, map) {
+  static mapMarkerForRestaurant(restaurant, map) {
     // https://leafletjs.com/reference-1.3.0.html#marker
     const marker = new L.marker([restaurant.latlng.lat, restaurant.latlng.lng],
       {title: restaurant.name,
       alt: restaurant.name,
       url: DBHelper.urlForRestaurant(restaurant)
-      });
+      })
       marker.addTo(newMap);
     return marker;
   }
+
+
+  static submitReview(reviewBody) {
+    const offlineReviewObj = {
+      name: 'addReview',
+      data : reviewBody,
+      object_type : 'review'
+    }
+
+    if(!navigator.onLine && offlineReviewObj.name === 'addReview') {
+      DBHelper.sendReviewWhenOnline(offlineReviewObj);
+      return ;
+    }
+
+    const serverReview = {
+      'restaurant_id': parseInt(reviewBody.restaurant_id),
+      'name': reviewBody.name,
+      'rating': parseInt(reviewBody.rating),
+      'comments': reviewBody.comments,
+
+    };
+
+    const fetchOptions = {
+      method: 'POST',
+      body: JSON.stringify(serverReview),
+      headers: new Headers({
+        'content-Type' : 'application/json'
+      })
+    }
+
+    fetch(`http://localhost:1337/reviews/`, fetchOptions)
+    .then(response => {
+      const contentType = response.headers.get('content-Type');
+      if (contentType && contentType.indexOf('application/json') !== -1) {
+        return response.json();
+      }
+  })
+}
+
+
+  static sendReviewWhenOnline(offlineReview){
+    localStorage.setItem('data', JSON.stringify(offlineReview.data));
+    window.addEventListener('online', function() {
+        const review = JSON.parse(localStorage.getItem('data'));
+        if (review !== null) {
+        DBHelper.submitReview(review);
+        localStorage.removeItem('data');
+        }
+    });
+  }
+
+
+  static updateFavorite(id, status){
+    const urlDatabase = DBHelper.DATABASE_URL;
+    fetch(`${DBHelper.DATABASE_URL}/${id}/?is_favorite=${status}`, {method:'PUT'})
+      dbPromise.then(db => {
+        const tx = db.transaction(restaurantObjectStoreName, 'readwrite');
+        const restaurantStore = tx.objectStore(restaurantObjectStoreName);
+          restaurantStore.get(parseInt(id))
+          .then(restaurant => {
+            restaurant.is_favorite = status;
+            restaurantStore.put(restaurant);
+          });
+      });
+  }
+
   /* static mapMarkerForRestaurant(restaurant, map) {
     const marker = new google.maps.Marker({
       position: restaurant.latlng,
@@ -206,6 +316,3 @@ class DBHelper {
   } */
 
 }
-
-
-
