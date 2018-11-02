@@ -33,3 +33,5 @@ Now that you’ve connected your application to an external database, it’s tim
 3. Add functionality to defer submission of the form until connection is re-established.
 4. Follow the recommendations provided by Lighthouse to achieve the required performance targets.
 5. Submit your project code for review.
+
+![Lighthouse Audit Scores](./audit_scores.png)
