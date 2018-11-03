@@ -36,4 +36,4 @@ Now that you’ve connected your application to an external database, it’s tim
 
 ![Lighthouse Audit Scores](./audit_scores.png)
 
-![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
+![Alt Text](./demo.gif)
