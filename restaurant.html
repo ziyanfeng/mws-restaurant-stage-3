@@ -40,14 +40,12 @@
     <!-- Beginning restaurant -->
     <section id="restaurant-container">
       <!-- <div class="name-fav-div">
-      <h2 id="restaurant-name" tabindex="0"></h2>
-      <img tabindex="0" alt="Add to Fav Icon" id="favorite_icon" src="img/empty_heart.png">
       </div> -->
-      <h2 id="restaurant-name" tabindex="0"></h2>
-      <img id="restaurant-img" tabindex="0" alt="restaurant image">
-      <p id="restaurant-cuisine" tabindex="0"></p>
-      <p id="restaurant-address" tabindex="0"></p>
-      <table id="restaurant-hours"></table>
+      <h2 id="restaurant-name" tabindex="0" aria-label="Restaurant Name"></h2>
+      <img id="restaurant-img" tabindex="0" alt="restaurant image" aria-label="Restaurant Image">
+      <p id="restaurant-cuisine" tabindex="0" aria-label="Restaurant Cuisine"></p>
+      <p id="restaurant-address" tabindex="0" aria-label="Restaurant Address"></p>
+      <table id="restaurant-hours" aria-label="Restaurant Hours"></table>
     </section>
     <!-- end restaurant -->
     <!-- Beginning reviews -->
@@ -58,18 +56,18 @@
           <input  id="user_name" type="text" name="name" placeholder="Type in your name here" aria-label="Name of the reviewer" required><br><br>
           <label>Rating:</label>
           <select id="rating" aria-label="Select rating">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3" selected>3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-         </select>
-         <br><br>
-         <label for="comments">Comments:</label><br>
-         <textarea id="comments" rows="4" cols="50" name="comment"></textarea><br>
-          <button onclick="addReview()" class="add_review">Add Review</button>
+                  <option value="1" aria-label="1 star">1</option>
+                  <option value="2" aria-label="2 star">2</option>
+                  <option value="3" selected aria-label="3 star">3</option>
+                  <option value="4" aria-label="4 star">4</option>
+                  <option value="5" aria-label="5 star">5</option>
+          </select>
+          <br><br>
+          <label for="comments" aria-label="comments">Comments:</label><br>
+          <textarea id="comments" rows="4" cols="50" name="comment"></textarea><br>
+          <button onclick="addReview()" class="add_review" aria-label="Submit Review">Add Review</button>
       </form>
-      <h2 tabindex="0">Reviews</h2>
+      <h2 tabindex="0" aria-label="Restaurant Reviews">Reviews</h2>
       <ul id="reviews-list" tabindex="0"></ul>
     </section>
     <!-- End reviews -->

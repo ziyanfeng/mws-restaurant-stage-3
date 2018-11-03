@@ -35,3 +35,5 @@ Now that you’ve connected your application to an external database, it’s tim
 5. Submit your project code for review.
 
 ![Lighthouse Audit Scores](./audit_scores.png)
+
+![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
